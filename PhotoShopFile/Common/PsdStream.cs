@@ -128,10 +128,55 @@ namespace PhotoshopFile
                 var layer = new Layer(reader, this);
                 Layers.Add(layer); // not work => Layers.Insert(0, layer);
             }
-            
-            //-----------------------------------------------------------------------
 
-            // Load image data for all channels.
+            #region Скрываем слои в скрытых папках
+            bool LayerSectionVisible = true;
+            int OpenCountLayerSection = 0;
+
+            // Реверс списка
+            foreach (var ly in Layers.AsEnumerable().Reverse())
+            {
+                // Начало или конец папки
+                if (ly.AdditionalInfo.SingleOrDefault(x => x is LayerSectionInfo) != null)
+                {
+                    if (LayerSectionVisible)
+                    {
+                        if (ly.Visible == false)
+                        {
+                            LayerSectionVisible = false;
+                            OpenCountLayerSection = 1;
+                        }
+                    }
+                    else
+                    {
+                        if (ly.Name == "</Layer group>")
+                        {
+                            // Конец папки
+                            OpenCountLayerSection--;
+
+                            // Скрытая папка закрыта
+                            if (OpenCountLayerSection == 0)
+                            {
+                                LayerSectionVisible = true;
+                            }
+                        }
+                        else
+                        {
+                            // Новая папка в папке
+                            OpenCountLayerSection++;
+                        }
+                    }
+                }
+                else
+                {
+                    // Папка скрыта
+                    if (!LayerSectionVisible)
+                        ly.Visible = false;
+                }
+            }
+            #endregion
+
+            #region Load image data for all channels
             foreach (var layer in Layers)
             {
                 if (SaveImage)
@@ -148,6 +193,7 @@ namespace PhotoshopFile
                     callback?.Invoke(layer);
                 }
             }
+            #endregion
 
             // Length is set to 0 when called on higher bitdepth layers.
             if (sectionLength > 0)

@@ -19,8 +19,6 @@ namespace PsdTo.Engine
     {
         static int index;
         static RootLayer md;
-        static bool LayerSectionVisible = true;
-        static int OpenCountLayerSection = 0;
 
         #region Invoke
         public static RootLayer Invoke(string filePsd, string BaseImageDir, string ReplaceToImageDir, bool saveImg)
@@ -42,46 +40,8 @@ namespace PsdTo.Engine
             // Считываем файл
             PsdStream.Load(filePsd, Encoding.BigEndianUnicode, saveImg, (ly) => 
             {
-                #region Начало или конец папки
-                if (ly.AdditionalInfo.SingleOrDefault(x => x is LayerSectionInfo) != null)
+                if (ly.AdditionalInfo.SingleOrDefault(x => x is LayerSectionInfo) == null)
                 {
-                    if (LayerSectionVisible)
-                    {
-                        if (ly.Visible == false)
-                        {
-                            LayerSectionVisible = false;
-                            OpenCountLayerSection = 1;
-                        }
-                    }
-                    else
-                    {
-                        if (ly.Name == "</Layer group>")
-                        {
-                            // Конец папки
-                            OpenCountLayerSection--;
-
-                            // Скрытая папка закрыта
-                            if (OpenCountLayerSection == 0)
-                            {
-                                LayerSectionVisible = true;
-                            }
-                        }
-                        else
-                        {
-                            // Новая папка в папке
-                            OpenCountLayerSection++;
-                        }
-                    }
-                }
-                #endregion
-
-                #region Другие слои
-                else
-                {
-                    // Папка скрыта
-                    if (!LayerSectionVisible)
-                        ly.Visible = false;
-
                     // Эфекты
                     var iflfx2 = ly.AdditionalInfo.SingleOrDefault(x => x.Key == "lfx2");
 
@@ -105,7 +65,6 @@ namespace PsdTo.Engine
                         ImageInvoke(ly, iflfx2, BaseImageDir, ReplaceToImageDir, saveImg);
                     }
                 }
-                #endregion
             });
 
             // Отдаем модель
