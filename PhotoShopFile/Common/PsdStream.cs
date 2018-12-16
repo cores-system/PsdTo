@@ -126,7 +126,7 @@ namespace PhotoshopFile
             for (int i = 0; i < numLayers; i++)
             {
                 var layer = new Layer(reader, this);
-                Layers.Add(layer);
+                Layers.Add(layer); // not work => Layers.Insert(0, layer);
             }
             
             //-----------------------------------------------------------------------
