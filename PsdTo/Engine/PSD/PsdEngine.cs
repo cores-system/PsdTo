@@ -43,7 +43,10 @@ namespace PsdTo.Engine
                 if (ly.AdditionalInfo.SingleOrDefault(x => x is LayerSectionInfo) == null)
                 {
                     // Эфекты
-                    var iflfx2 = ly.AdditionalInfo.SingleOrDefault(x => x.Key == "lfx2");
+                    var lfx2 = ly.AdditionalInfo.SingleOrDefault(x => x.Key == "lfx2");
+
+                    // Fill opacity
+                    var iOpa = ly.AdditionalInfo.SingleOrDefault(x => x.Key == "iOpa");
 
                     // 
                     var iftext = ly.AdditionalInfo.SingleOrDefault(x => x.Key == "TySh");
@@ -54,15 +57,15 @@ namespace PsdTo.Engine
 
                     if (iftext != null)
                     {
-                        TextInvoke(ly, iftext, iflfx2);
+                        TextInvoke(ly, iftext, lfx2, iOpa);
                     }
                     else if (ifshape1 != null || ifshape2 != null || ifshape3 != null || ifshape4 != null)
                     {
-                        ShapeInvoke(ly, iflfx2, ifshape1, ifshape2, ifshape3, ifshape4, BaseImageDir, ReplaceToImageDir, saveImg);
+                        ShapeInvoke(ly, lfx2, iOpa, ifshape1, ifshape2, ifshape3, ifshape4, BaseImageDir, ReplaceToImageDir, saveImg);
                     }
                     else
                     {
-                        ImageInvoke(ly, iflfx2, BaseImageDir, ReplaceToImageDir, saveImg);
+                        ImageInvoke(ly, lfx2, iOpa, BaseImageDir, ReplaceToImageDir, saveImg);
                     }
                 }
             });
@@ -74,7 +77,7 @@ namespace PsdTo.Engine
 
 
         #region TextInvoke
-        private static void TextInvoke(Layer ly, LayerInfo text, LayerInfo lfx2)
+        private static void TextInvoke(Layer ly, LayerInfo text, LayerInfo lfx2, LayerInfo iOpa)
         {
             TypeToolTyShPH6 txt = new TypeToolTyShPH6(PsdCommon.CreateStream(text));
             Dictionary<string, object> d = txt.StylesheetReader.GetStylesheetDataFromLongestRun();
@@ -108,6 +111,7 @@ namespace PsdTo.Engine
                 Height = ly.Rect.Height,
                 Visible = ly.Visible,
                 Opacity = ly.Opacity,
+                fill = GetToiOpa(iOpa),
                 fontName = PsdParser.FontName(txt, styleSheetSet, d),
                 fontSize = PsdParser.FontSize(d),
                 lineHeight = lineHeight,
@@ -130,7 +134,7 @@ namespace PsdTo.Engine
         #endregion
 
         #region ShapeInvoke
-        private static void ShapeInvoke(Layer ly, LayerInfo lfx2, LayerInfo ifshape1, LayerInfo ifshape2, LayerInfo ifshape3, LayerInfo ifshape4, string BaseImageDir, string ReplaceToImageDir, bool saveImg)
+        private static void ShapeInvoke(Layer ly, LayerInfo lfx2, LayerInfo iOpa, LayerInfo ifshape1, LayerInfo ifshape2, LayerInfo ifshape3, LayerInfo ifshape4, string BaseImageDir, string ReplaceToImageDir, bool saveImg)
         {
             // radius is implemented only for photoshop shapetool objects
             int radius = 0;
@@ -206,6 +210,7 @@ namespace PsdTo.Engine
                 Height = ly.Rect.Height,
                 Visible = ly.Visible,
                 Opacity = ly.Opacity,
+                fill = GetToiOpa(iOpa),
                 Image = res.source.Replace(BaseImageDir, ReplaceToImageDir),
                 IsDublicate = res.IsDublicate,
                 Color = new ColorRBG() { A = color.A, B = color.B, R = color.R, G = color.G, },
@@ -219,7 +224,7 @@ namespace PsdTo.Engine
         #endregion
 
         #region ImageInvoke
-        private static void ImageInvoke(Layer ly, LayerInfo lfx2, string BaseImageDir, string ReplaceToImageDir, bool saveImg)
+        private static void ImageInvoke(Layer ly, LayerInfo lfx2, LayerInfo iOpa, string BaseImageDir, string ReplaceToImageDir, bool saveImg)
         {
             var res = ImgEngine.SaveBitmap(ly, ly.Name, BaseImageDir, saveImg);
 
@@ -236,6 +241,7 @@ namespace PsdTo.Engine
                     Height = ly.Rect.Height,
                     Visible = ly.Visible,
                     Opacity = ly.Opacity,
+                    fill = GetToiOpa(iOpa),
                     IsDublicate = res.IsDublicate,
                     Source = res.source.Replace(BaseImageDir, ReplaceToImageDir),
                     Fx = GetTolfx2(lfx2),
@@ -256,6 +262,21 @@ namespace PsdTo.Engine
             }
 
             return null;
+        }
+        #endregion
+
+        #region GetToiOpa
+        private static byte GetToiOpa(LayerInfo iOpa)
+        {
+            if (iOpa != null)
+            {
+                using (BinaryReverseReader reader = PsdCommon.CreateStream(iOpa))
+                {
+                    return reader.ReadByte();
+                }
+            }
+
+            return 255;
         }
         #endregion
 

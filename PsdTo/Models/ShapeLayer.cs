@@ -14,6 +14,7 @@ namespace PsdTo.Models
         public int Height;
         public bool Visible;
         public byte Opacity;
+        public byte fill;
         public string Image;
         public bool IsDublicate;
         public ColorRBG Color = new ColorRBG();

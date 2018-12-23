@@ -15,6 +15,7 @@ namespace PsdTo.Models
         public bool Visible;
         public bool IsDublicate;
         public byte Opacity;
+        public byte fill;
         public string Source;
         public Dictionary<string, object> Fx;
         public bool Clipping;

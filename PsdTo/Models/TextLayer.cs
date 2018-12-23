@@ -15,6 +15,7 @@ namespace PsdTo.Models
         public int Height;
         public bool Visible;
         public byte Opacity;
+        public byte fill;
         public string fontName;
         public double fontSize;
         public double lineHeight;
